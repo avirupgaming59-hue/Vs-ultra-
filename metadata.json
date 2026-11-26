@@ -1,0 +1,6 @@
+{
+  "name": "VS Shell",
+  "description": "Fullscreen code-server IDE workspace with background session keep-alive, multi-server profiles, and language-aware phone file manager.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

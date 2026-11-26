@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VS Shell</string>
+    <string name="nav_workspace">Workspace</string>
+    <string name="nav_user_terminal">Terminal</string>
+    <string name="nav_phone_files">Phone Files</string>
+    <string name="nav_profiles">Servers</string>
+    <string name="nav_ai_chat">AI Chat</string>
+    <string name="nav_settings">Settings</string>
+    <string name="keep_alive_channel_name">Code-Server Background Session</string>
+    <string name="keep_alive_channel_desc">Keeps your active code-server WebSocket and login session alive when switching apps.</string>
+    <string name="keep_alive_notif_title">VS Shell Session Active</string>
+    <string name="keep_alive_notif_text">Connected to %1$s in background</string>
+    <string name="keep_alive_notif_idle">Background workspace engine ready</string>
+    <string name="action_stop_service">Disconnect</string>
+</resources>

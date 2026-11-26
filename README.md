@@ -1,38 +1,29 @@
 # VS Ultra Private
 
-**Private canonical workspace for the VS Ultra project.**
+**Canonical private repository for the complete VS Ultra application source.**
 
-This repository is intended to hold the complete private application source, project-owned build/runtime configuration, AI implementation, internal services, and security-sensitive development materials.
+This repository must remain **Private**. It is the home for the Android application, AI integration, Localhost and Workspace runtime, terminal implementation, Gradle/build setup, UI, data layer, resources, tests, and project documentation.
 
-## Repository security
+## Source layout
 
-- Visibility must remain **Private**.
-- The repository owner is the only human who should be granted access unless the owner explicitly adds someone.
-- AI agents must be granted access separately, with least-privilege repository-scoped permissions. Being connected to the public repository does not grant access here.
-- Never place private source, credentials, signing material, user data, or private build artifacts in a public repository.
-- Do not mirror this repository's Git history, branches, tags, or complete source tree into any public repository.
+- `app/` — Android application, UI, AI, terminal, workspace, runtime, services, data, security, resources, and tests.
+- `gradle/`, `gradlew*`, `build.gradle.kts`, `settings.gradle.kts` — build system and wrapper.
+- `.github/workflows/` — CI and APK workflow definitions.
+- `assets/`, `public/` — project assets.
+- `docs/source/README.md` — original source repository README.
+- `MIGRATION-STATUS.md` — exact transfer scope and known exception.
 
-## Relationship to the public repository
+## Security and public companion
 
-The intended public repository is a separate, independent repository containing only owner-approved documentation, standalone UI demonstrations, and safe examples.
+- Keep this repository Private.
+- Do not publish private application code, credentials, signing materials, or internal runtime implementation to a public repository.
+- A public companion, if created, must be a separate repository containing only owner-approved documentation and deliberately non-buildable samples.
+- A submodule is only a pinned pointer; it does not mirror or hide repository contents.
 
-When that public repository exists, it can be referenced here as a Git submodule or other read-only dependency. A submodule stores a pointer to a specific public commit; it does **not** copy all public files into this repository's normal working tree. Cloning this repository with submodules enabled retrieves the referenced public content separately.
+## Source relationship
 
-A submodule reference does not make a public repository private. Anyone can still browse or clone the public repository directly. It also does not grant any AI agent access to this private repository.
+Initial source: `avirupgaming59-hue/Vs-ultra`  
+Private destination: `avirupgaming59-hue/Vs-ultra-private-`  
+Destination branch: `main`
 
-## Current setup status
-
-- Private repository identified: `avirupgaming59-hue/Vs-ultra-private-`
-- Default branch: `main`
-- Private visibility: confirmed before initialization.
-- Public companion repository: not found in the connected GitHub account at setup time.
-- Public submodule: not configured because the public companion repository does not yet exist.
-- Source files: not transferred in this initial setup commit.
-
-## Owner-controlled next steps
-
-1. Confirm the intended public repository exists and its exact repository name.
-2. Review its complete file list and history before linking it.
-3. Add the public repository as a submodule only if the owner wants a visible, pinned reference.
-4. Transfer the private application source into this repository through a reviewed, complete file/tree migration if this repository is to become the canonical private source.
-5. Verify repository visibility and AI permissions after migration.
+The source repository has not been deleted or modified by this copy operation.

@@ -1,0 +1,174 @@
+name: Verify Debug Build
+
+on:
+  push:
+    tags:
+      - "v*-debug"
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish the verified debug APK as a GitHub Release
+        required: true
+        default: false
+        type: boolean
+      release_tag:
+        description: Release tag to use when publishing the debug APK
+        required: true
+        default: v1.0.4-debug
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 37.2
+        run: yes | sdkmanager "platforms;android-37.2" "build-tools;37.0.0"
+
+      - name: Set up Gradle 9.9.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.9.2"
+
+      - name: Create CI debug signing key
+        run: |
+          keytool -genkeypair -noprompt \
+            -keystore debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -dname "CN=VS Ultra CI Debug,O=VS Ultra,C=US" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000
+
+      - name: Run unit tests, lint, and assemble debug APK
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: vs-ultra-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+  instrumentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 37.2
+        run: yes | sdkmanager "platforms;android-37.2" "build-tools;37.0.0"
+
+      - name: Set up Gradle 9.9.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.9.2"
+
+      - name: Create CI debug signing key
+        run: |
+          keytool -genkeypair -noprompt \
+            -keystore debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -dname "CN=VS Ultra CI Debug,O=VS Ultra,C=US" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000
+
+      - name: Run instrumentation tests on API 36
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
+
+  publish-debug-release:
+    if: github.event_name == 'push' || inputs.publish_release == true
+    needs:
+      - build-test-lint
+      - instrumentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+
+    steps:
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: yes | sdkmanager "build-tools;37.0.0"
+
+      - name: Download verified APK
+        uses: actions/download-artifact@v4
+        with:
+          name: vs-ultra-debug-apk
+          path: dist
+
+      - name: Verify package, version, signature, and checksum
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Release tag may contain only letters, numbers, dots, underscores, and hyphens."
+            exit 1
+          fi
+          APK="dist/app-debug.apk"
+          AAPT="$ANDROID_HOME/build-tools/37.0.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/37.0.0/apksigner"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -F "package: name='com.aistudio.vsshell.krmxvp.debug' versionCode='4' versionName='1.0.4'"
+          "$APKSIGNER" verify --print-certs "$APK"
+          FINAL_APK="dist/vs-ultra-${RELEASE_TAG}-debug.apk"
+          mv "$APK" "$FINAL_APK"
+          sha256sum "$FINAL_APK" | tee "${FINAL_APK}.sha256"
+
+      - name: Publish clearly labeled debug release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: VS Ultra ${{ inputs.release_tag || github.ref_name }} (Debug)
+          body: |
+            Verified debug build for package `com.aistudio.vsshell.krmxvp.debug`, version 1.0.4 (4).
+
+            This APK is debug-signed and uses a separate application ID. It installs alongside the production app but cannot update or replace the existing `v1.0.3` release. Firebase Gemini is unavailable unless the owning Firebase project's configuration is provided.
+
+            Unit tests, lint, APK assembly, and API 36 instrumentation tests completed successfully in this workflow.
+          files: |
+            dist/vs-ultra-${{ inputs.release_tag }}-debug.apk
+            dist/vs-ultra-${{ inputs.release_tag }}-debug.apk.sha256
